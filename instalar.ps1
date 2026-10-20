@@ -90,20 +90,22 @@ if ($claude) {
   }
 } else { Aviso "Claude Code no encontrado (se omite). Si lo tienes, reabre la terminal y repite." }
 
-# Quitar el MCP antiguo de DAX Insider de la app de escritorio de Claude (lo agrega el boton de DAX Insider)
-Paso "Claude Desktop: quitar MCP dax-insider antiguo" {
-  foreach ($cfg in @("$env:APPDATA\Claude\claude_desktop_config.json", "$env:LOCALAPPDATA\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json")) {
-    if (Test-Path $cfg) {
-      $raw = (Get-Content $cfg -Raw).TrimStart([char]0xFEFF)
-      if ($raw -match 'dax-insider') {
-        Respaldar $cfg
-        $j = $raw | ConvertFrom-Json
-        $j.mcpServers.PSObject.Properties.Remove('dax-insider')
-        Escribir $cfg ($j | ConvertTo-Json -Depth 20)
-      }
+# App de escritorio de Claude (chat): agrega el MCP de Microsoft y quita el dax-insider antiguo
+$DeskCfgs = @("$env:APPDATA\Claude\claude_desktop_config.json") + (Get-ChildItem "$env:LOCALAPPDATA\Packages\Claude_*\LocalCache\Roaming\Claude\claude_desktop_config.json" -EA SilentlyContinue | ForEach-Object FullName)
+if ((Test-Path "$env:APPDATA\Claude") -or ($DeskCfgs.Count -gt 1)) {
+  Paso "Claude Desktop: MCP Power BI (Microsoft)" {
+    foreach ($cfg in $DeskCfgs) {
+      if (-not (Test-Path (Split-Path $cfg))) { continue }
+      Respaldar $cfg
+      $raw = if (Test-Path $cfg) { (Get-Content $cfg -Raw).TrimStart([char]0xFEFF) } else { '' }
+      $j = if ($raw.Trim()) { $raw | ConvertFrom-Json } else { [pscustomobject]@{} }
+      if (-not $j.mcpServers) { $j | Add-Member mcpServers ([pscustomobject]@{}) -Force }
+      if ($j.mcpServers.'dax-insider') { $j.mcpServers.PSObject.Properties.Remove('dax-insider') }
+      if (-not $j.mcpServers.'powerbi-modeling-mcp') { $j.mcpServers | Add-Member 'powerbi-modeling-mcp' ([pscustomobject]$MsMcp) }
+      Escribir $cfg ($j | ConvertTo-Json -Depth 20)
     }
   }
-}
+} else { Aviso "App de escritorio de Claude no encontrada (se omite)" }
 
 # 6. Codex
 $CodexDir = Join-Path $H '.codex'
