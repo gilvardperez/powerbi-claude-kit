@@ -4,14 +4,14 @@ Dashboards de Power BI con Claude. Reutiliza las **skills oficiales de Microsoft
 
 ## Instalar
 
-Dile a Claude:
+Pásale a tu agente (Claude Code, Codex o Antigravity) el link de este repo y dile **"instalar"**:
 
-> Instala el MCP de Power BI siguiendo https://gilvardperez.github.io/powerbi-claude-kit/instalar.md
+> https://github.com/gilvardperez/powerbi-claude-kit — instalar
 
-O en PowerShell:
+El agente sigue [INSTALAR.md](INSTALAR.md). O hazlo tú en PowerShell:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://gilvardperez.github.io/powerbi-claude-kit/instalar.ps1 | iex"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/gilvardperez/powerbi-claude-kit/main/instalar.ps1 | iex"
 ```
 
 ## Qué instala

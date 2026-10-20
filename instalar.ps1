@@ -1,5 +1,5 @@
 # Power BI Claude Kit - instalador de un comando
-#   irm https://gilvardperez.github.io/powerbi-claude-kit/instalar.ps1 | iex
+#   irm https://raw.githubusercontent.com/gilvardperez/powerbi-claude-kit/main/instalar.ps1 | iex
 # Seguro de repetir: cada vez trae la ultima version de las skills de Microsoft y del kit.
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
