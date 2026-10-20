@@ -124,32 +124,6 @@ Paso "Claude Desktop: MCP Power BI (Microsoft)" {
 }
 } else { Aviso "App de escritorio de Claude no encontrada (se omite)" }
 
-# Skills para el chat de la app de escritorio (se suben en Configuracion > Skills)
-$ZipDir = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Skills Power BI para Claude'
-Paso "Skills en .zip para la app de escritorio de Claude" {
-  if (Test-Path $ZipDir) { Remove-Item $ZipDir -Recurse -Force }
-  New-Item -ItemType Directory -Force $ZipDir | Out-Null
-  $tmpS = Join-Path $env:TEMP 'pbi-kit-zips'; if (Test-Path $tmpS) { Remove-Item $tmpS -Recurse -Force }; New-Item -ItemType Directory -Force $tmpS | Out-Null
-  foreach ($sk in $Skills) {
-    $d = Join-Path $tmpS $sk.Name
-    Copy-Item $sk.FullName $d -Recurse -Force
-    # las skills de Microsoft apuntan a ../../common: se incluye dentro de la skill
-    if ($MsCommon -and (Test-Path $MsCommon) -and (Get-ChildItem $d -Recurse -Filter *.md | Select-String '\.\./\.\./common/' -Quiet)) {
-      Copy-Item $MsCommon (Join-Path $d 'common') -Recurse -Force
-      Get-ChildItem $d -Recurse -Filter *.md | ForEach-Object {
-        $t = Get-Content $_.FullName -Raw
-        if ($t -match '\.\./\.\./common/') {
-          $rel = ($_.DirectoryName.Substring($d.Length) -split '\\' | Where-Object { $_ }).Count
-          $pre = ('../' * $rel) + 'common/'
-          Escribir $_.FullName ($t -replace '\.\./\.\./common/', $pre)
-        }
-      }
-    }
-    Compress-Archive -Path $d -DestinationPath (Join-Path $ZipDir ($sk.Name + '.zip')) -Force
-  }
-  Write-Host "    -> $ZipDir" -F DarkGray
-}
-
 # 6. Codex
 $CodexDir = Join-Path $H '.codex'
 if ((Get-Command codex -EA SilentlyContinue) -or (Test-Path $CodexDir)) {
@@ -187,7 +161,6 @@ if ($fail.Count) { Write-Host "RESULTADO: CON PROBLEMAS -> $($fail -join ', ')" 
 else {
   Write-Host "RESULTADO: OK" -F Green
   Write-Host "1) Cierra por completo y vuelve a abrir tu agente (Claude app / Claude Code / Codex / Antigravity) y abre una conversacion NUEVA."
-  Write-Host "   Chat de la app de escritorio: Configuracion > Skills > subir cada .zip de '$ZipDir' (una vez)."
   Write-Host "2) Power BI Desktop: Opciones > Vista previa > Power BI Project (.pbip)."
-  Write-Host "3) Abre tu .pbip, guarda y di: 'Crea un dashboard del reporte que tengo abierto'."
+  Write-Host "3) En la app de Claude usa la pestana </> Code (ahi estan las skills). Abre tu .pbip, guarda y di: 'Crea un dashboard del reporte que tengo abierto'."
 }
