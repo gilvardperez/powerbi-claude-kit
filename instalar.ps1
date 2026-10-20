@@ -12,9 +12,6 @@ $Base   = Join-Path $H '.pbi-kit'
 $Resp   = Join-Path $Base ('respaldos\' + (Get-Date -f 'yyyyMMdd-HHmmss'))
 $MsZip  = 'https://github.com/microsoft/skills-for-fabric/archive/refs/heads/main.zip'
 $KitZip = 'https://github.com/gilvardperez/powerbi-claude-kit/archive/refs/heads/main.zip'
-$DaxApi = 'https://api.github.com/repos/gilvardperez/DaxInsider/releases/latest'
-$DaxDir = Join-Path $env:LOCALAPPDATA 'DAX Insider'
-$DaxExe = Join-Path $DaxDir 'DAX Insider.exe'
 New-Item -ItemType Directory -Force $Base, $Resp | Out-Null
 
 Write-Host "`n== Power BI Claude Kit (Gilvard Perez) ==`n" -F Cyan
@@ -67,29 +64,8 @@ function Copiar-Skills($destino) {
   if ($MsCommon -and (Test-Path $MsCommon)) { Copy-Item $MsCommon (Join-Path (Split-Path $destino) 'common') -Recurse -Force }
 }
 
-# 4. DAX Insider
-Paso "DAX Insider (ultima version de github.com/gilvardperez/DaxInsider)" {
-  $rel = Invoke-RestMethod $DaxApi -Headers @{ 'User-Agent' = 'pbi-kit' }
-  $ver = Join-Path $DaxDir 'version.txt'
-  $tengo = if (Test-Path $ver) { (Get-Content $ver -Raw).Trim() } else { '' }
-  if ($tengo -ne $rel.tag_name -or -not (Test-Path $DaxExe)) {
-    $asset = $rel.assets | Where-Object { $_.name -like '*.zip' } | Select-Object -First 1
-    if (-not $asset) { throw "el release $($rel.tag_name) no trae .zip" }
-    Get-Process 'DAX Insider*' -EA SilentlyContinue | Stop-Process -Force
-    $zip = Join-Path $env:TEMP $asset.name
-    Invoke-WebRequest $asset.browser_download_url -OutFile $zip -UseBasicParsing
-    New-Item -ItemType Directory -Force $DaxDir | Out-Null
-    $tmp = Join-Path $env:TEMP 'dax-insider-x'; if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
-    Expand-Archive $zip $tmp -Force
-    $exe = Get-ChildItem $tmp -Recurse -Filter 'DAX Insider.exe' | Select-Object -First 1
-    if (-not $exe) { throw "no encontre 'DAX Insider.exe' en $($asset.name)" }
-    Copy-Item (Join-Path $exe.DirectoryName '*') $DaxDir -Recurse -Force
-    Set-Content $ver $rel.tag_name
-  }
-}
 
 $MsMcp  = @{ command = 'npx'; args = @('-y','@microsoft/powerbi-modeling-mcp@latest','--start') }
-$DaxMcp = @{ command = $DaxExe; args = @('--mcp') }
 
 # 5. Claude Code (busca claude aunque no este en el PATH)
 $claude = (Get-Command claude -EA SilentlyContinue).Source
@@ -109,8 +85,8 @@ if ($claude) {
     claude plugin marketplace update gilvard-pbi 2>&1 | Out-Null
     claude plugin install pbi-kit@gilvard-pbi 2>&1 | Out-Null
   }
-  Paso "Claude Code: MCP DAX Insider" {
-    if (-not ((claude mcp list 2>&1) -match 'dax-insider')) { claude mcp add -s user dax-insider -- "$DaxExe" --mcp 2>&1 | Out-Null }
+  Paso "Claude Code: quitar MCP dax-insider antiguo" {
+    if ((claude mcp list 2>&1) -match 'dax-insider') { claude mcp remove dax-insider -s user 2>&1 | Out-Null }
   }
 } else { Aviso "Claude Code no encontrado (se omite). Si lo tienes, reabre la terminal y repite." }
 
@@ -122,13 +98,10 @@ if ((Get-Command codex -EA SilentlyContinue) -or (Test-Path $CodexDir)) {
     $cfg = Join-Path $CodexDir 'config.toml'
     Respaldar $cfg
     $t = if (Test-Path $cfg) { Get-Content $cfg -Raw } else { '' }
-    $daxToml = $DaxExe -replace '\\','\\'
     if ($t -notmatch '\[mcp_servers\.powerbi-modeling-mcp\]') {
       $t += "`n[mcp_servers.powerbi-modeling-mcp]`ncommand = `"npx`"`nargs = [`"-y`", `"@microsoft/powerbi-modeling-mcp@latest`", `"--start`"]`n"
     }
-    if ($t -notmatch '\[mcp_servers\.dax-insider\]') {
-      $t += "`n[mcp_servers.dax-insider]`ncommand = `"$daxToml`"`nargs = [`"--mcp`"]`n"
-    }
+    $t = [regex]::Replace($t, '(?ms)^\[mcp_servers\.dax-insider\].*?(?=^\[|\z)', '')
     Escribir $cfg $t
   }
 } else { Aviso "Codex no encontrado (se omite)" }
@@ -144,7 +117,7 @@ if (Test-Path (Join-Path $H '.gemini')) {
     $j = if ($raw -and $raw.Trim()) { $raw.TrimStart([char]0xFEFF) | ConvertFrom-Json } else { [pscustomobject]@{} }
     if (-not $j.mcpServers) { $j | Add-Member mcpServers ([pscustomobject]@{}) -Force }
     if (-not $j.mcpServers.'powerbi-modeling-mcp') { $j.mcpServers | Add-Member 'powerbi-modeling-mcp' ([pscustomobject]$MsMcp) }
-    if (-not $j.mcpServers.'dax-insider')          { $j.mcpServers | Add-Member 'dax-insider' ([pscustomobject]$DaxMcp) }
+    if ($j.mcpServers.'dax-insider') { $j.mcpServers.PSObject.Properties.Remove('dax-insider') }
     Escribir $cfg ($j | ConvertTo-Json -Depth 10)
   }
 } else { Aviso "Antigravity no encontrado (se omite)" }

@@ -7,4 +7,4 @@ Si el usuario te pasa este repo y te dice "instalar":
 2. Lee la última línea `RESULTADO`. Si dice CON PROBLEMAS, corrige lo listado y vuelve a ejecutar: es seguro repetirlo.
 3. Dile al usuario: reinicia el agente, activa en Power BI Desktop *Opciones → Vista previa → Power BI Project (.pbip)*, abre su .pbip, guarda y pide "Crea un dashboard del reporte que tengo abierto".
 
-Para actualizar (skills de Microsoft, kit y DAX Insider) se ejecuta el mismo comando.
+Para actualizar (skills de Microsoft y del kit) se ejecuta el mismo comando.

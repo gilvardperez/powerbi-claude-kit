@@ -1,6 +1,6 @@
 # Power BI Claude Kit
 
-Dashboards de Power BI con Claude. Reutiliza las **skills oficiales de Microsoft** (siempre en su última versión) y agrega Deneb, visuales HTML/SVG y **DAX Insider**.
+Dashboards de Power BI con Claude. Reutiliza las **skills oficiales de Microsoft** (siempre en su última versión) y agrega Deneb, visuales HTML/SVG y el motor de calidad de **DAX Insider** integrado.
 
 ## Instalar
 
@@ -21,8 +21,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubus
 | MCP de modelado Power BI | [Microsoft](https://github.com/microsoft/skills-for-fabric) · `@microsoft/powerbi-modeling-mcp@latest` |
 | Skills `semantic-model-authoring` y `powerbi-report-cli` | [skills-for-fabric / powerbi-authoring](https://github.com/microsoft/skills-for-fabric/tree/main/plugins/powerbi-authoring) |
 | CLIs `powerbi-report-author` y `powerbi-desktop` | npm de Microsoft (@latest) |
-| Skills del kit: dashboard, Deneb, HTML/SVG, DAX Insider | este repo |
-| DAX Insider + su MCP (última versión) | [gilvardperez/DaxInsider](https://github.com/gilvardperez/DaxInsider/releases/latest) |
+| Skills del kit: dashboard, Deneb, HTML/SVG, optimizar-modelo | este repo |
+| Motor de calidad del modelo (reglas de DAX Insider), sin abrir la app | skill `optimizar-modelo` |
 
 Funciona en **Claude Code, Codex y Antigravity**: el instalador detecta cuáles tienes.
 
