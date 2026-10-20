@@ -17,7 +17,7 @@ New-Item -ItemType Directory -Force $Base, $Resp | Out-Null
 Write-Host "`n== Power BI MCP Kit (Gilvard Perez) ==`n" -F Cyan
 
 function Escribir($f, $t) { [IO.File]::WriteAllText($f, $t, (New-Object Text.UTF8Encoding $false)) }
-function Respaldar($f) { if (Test-Path $f) { Copy-Item $f (Join-Path $Resp ((Split-Path $f -Leaf) + '.bak')) -Force } }
+function Respaldar($f) { if (Test-Path $f) { Copy-Item $f (Join-Path $Resp (($f -replace '[:\\]','_') + '.bak')) -Force } }
 
 # 1. Node.js
 Paso "Node.js" {
@@ -92,10 +92,21 @@ if ($claude) {
 } else { Aviso "Claude Code no encontrado (se omite). Si lo tienes, reabre la terminal y repite." }
 
 # App de escritorio de Claude (chat): agrega el MCP de Microsoft y quita el dax-insider antiguo
-$DeskDirs = @("$env:APPDATA\Claude")
-# Version de Microsoft Store con datos fuera del paquete: %LOCALAPPDATA%\Claude-Data\claude_<id>
+# Busca TODOS los claude_desktop_config.json existentes (instalacion normal, Microsoft Store,
+# datos fuera del paquete, etc.) en AppData\Roaming y AppData\Local.
+$DeskDirs = @()
+foreach ($root in @($env:APPDATA, $env:LOCALAPPDATA)) {
+  $DeskDirs += Get-ChildItem $root -Recurse -Depth 5 -Filter 'claude_desktop_config.json' -File -EA SilentlyContinue |
+    Where-Object { $_.FullName -match '\\Claude' } | ForEach-Object DirectoryName
+}
+# Carpetas de datos de Claude que aun no tienen config
+$DeskDirs += Get-Item "$env:APPDATA\Claude" -EA SilentlyContinue | ForEach-Object FullName
 $DeskDirs += Get-ChildItem "$env:LOCALAPPDATA\Claude-Data" -Directory -EA SilentlyContinue | ForEach-Object FullName
-$DeskDirs += Get-ChildItem "$env:LOCALAPPDATA\Packages" -Directory -EA SilentlyContinue | Where-Object { $_.Name -like 'Claude*' -or $_.Name -like 'Anthropic*' } | ForEach-Object { Join-Path $_.FullName 'LocalCache\Roaming\Claude' }
+$DeskDirs = $DeskDirs | Where-Object { $_ } | Sort-Object -Unique
+# Claude Desktop instalado pero sin carpeta de datos todavia: crear la estandar
+$hayApp = (Get-ChildItem "$env:LOCALAPPDATA\Packages" -Directory -Filter 'Claude_*' -EA SilentlyContinue) -or (Test-Path "$env:LOCALAPPDATA\AnthropicClaude") -or (Test-Path "$env:LOCALAPPDATA\Programs\Claude")
+if (-not $DeskDirs -and $hayApp) { $DeskDirs = @("$env:APPDATA\Claude") }
+if ($DeskDirs) {
 Paso "Claude Desktop: MCP Power BI (Microsoft)" {
   foreach ($dir in $DeskDirs) {
     New-Item -ItemType Directory -Force $dir | Out-Null
@@ -111,6 +122,7 @@ Paso "Claude Desktop: MCP Power BI (Microsoft)" {
     Write-Host "    -> $cfg" -F DarkGray
   }
 }
+} else { Aviso "App de escritorio de Claude no encontrada (se omite)" }
 
 # 6. Codex
 $CodexDir = Join-Path $H '.codex'
