@@ -4,7 +4,7 @@ Dashboards de Power BI con Claude. Reutiliza las **skills oficiales de Microsoft
 
 ## Instalar
 
-Abre Claude, entra a la pestaña **`</>` Code** (o Claude Code / Codex / Antigravity) y escribe:
+Abre Claude, entra a la pestaña **`</>` Code** con entorno **Local** (o Claude Code / Codex / Antigravity) y escribe:
 
 > https://github.com/gilvardperez/powerbi-mcp-kit — instalar
 

@@ -60,13 +60,34 @@ function Copiar-Skills($destino) {
     $d = Join-Path $destino $s.Name
     if (Test-Path $d) { Remove-Item $d -Recurse -Force }
     Copy-Item $s.FullName $d -Recurse -Force
+    # Las skills de Microsoft apuntan a ../../common: se mete 'common' dentro de la skill
+    # y se ajustan las rutas para que funcione en cualquier carpeta de skills.
+    $mds = Get-ChildItem $d -Recurse -Filter *.md
+    if ($MsCommon -and (Test-Path $MsCommon) -and ($mds | Select-String '(\.\./)+common/' -Quiet)) {
+      Copy-Item $MsCommon (Join-Path $d 'common') -Recurse -Force
+      foreach ($m in $mds) {
+        $t = Get-Content $m.FullName -Raw
+        if ($t -match '(\.\./)+common/') {
+          $nivel = @($m.DirectoryName.Substring($d.Length) -split '[\\/]' | Where-Object { $_ }).Count
+          Escribir $m.FullName ($t -replace '(\.\./)+common/', (('../' * $nivel) + 'common/'))
+        }
+      }
+    }
   }
-  # las skills de Microsoft referencian ../../common
-  if ($MsCommon -and (Test-Path $MsCommon)) { Copy-Item $MsCommon (Join-Path (Split-Path $destino) 'common') -Recurse -Force }
 }
 
 
 $MsMcp  = @{ command = 'npx'; args = @('-y','@microsoft/powerbi-modeling-mcp@latest','--start') }
+
+# 5a. Skills para Claude Code y la pestana Code de la app (siempre, aunque no haya CLI)
+Paso "Claude Code: skills en %USERPROFILE%\.claude\skills" {
+  Copiar-Skills (Join-Path $H '.claude\skills')
+}
+Paso "Claude Code: verificar skills instaladas" {
+  $faltan = @('pbi-dashboard','optimizar-modelo','semantic-model-authoring','powerbi-report-cli') | Where-Object { -not (Test-Path (Join-Path $H ".claude\skills\$_\SKILL.md")) }
+  if ($faltan) { throw "faltan: $($faltan -join ', ')" }
+  Write-Host "    -> $(Join-Path $H '.claude\skills')" -F DarkGray
+}
 
 # 5. Claude Code (busca claude aunque no este en el PATH)
 $claude = (Get-Command claude -EA SilentlyContinue).Source
@@ -85,9 +106,6 @@ if ($claude) {
     claude plugin marketplace add https://github.com/gilvardperez/powerbi-mcp-kit.git 2>&1 | Out-Null
     claude plugin marketplace update gilvard-pbi 2>&1 | Out-Null
     claude plugin install pbi-kit@gilvard-pbi 2>&1 | Out-Null
-  }
-  Paso "Claude Code: skills en %USERPROFILE%\.claude\skills (respaldo del plugin)" {
-    Copiar-Skills (Join-Path $H '.claude\skills')
   }
   Paso "Claude Code: MCP Power BI a nivel usuario" {
     if (-not ((claude mcp list 2>&1) -match 'powerbi-modeling-mcp')) {
