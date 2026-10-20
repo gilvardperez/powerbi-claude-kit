@@ -41,7 +41,8 @@ Paso "Descargar skills oficiales de Microsoft y del kit" {
   New-Item -ItemType Directory -Force $Src | Out-Null
   foreach ($z in @(@($MsZip,'ms'), @($KitZip,'kit'))) {
     $f = Join-Path $Src ($z[1] + '.zip')
-    Invoke-WebRequest $z[0] -OutFile $f -UseBasicParsing
+    try { Invoke-WebRequest $z[0] -OutFile $f -UseBasicParsing }
+    catch { Invoke-WebRequest ($z[0] -replace 'powerbi-mcp-kit','powerbi-claude-kit') -OutFile $f -UseBasicParsing }
     Expand-Archive $f (Join-Path $Src $z[1]) -Force
   }
 }
@@ -91,8 +92,9 @@ if ($claude) {
 } else { Aviso "Claude Code no encontrado (se omite). Si lo tienes, reabre la terminal y repite." }
 
 # App de escritorio de Claude (chat): agrega el MCP de Microsoft y quita el dax-insider antiguo
-$DeskCfgs = @("$env:APPDATA\Claude\claude_desktop_config.json") + (Get-ChildItem "$env:LOCALAPPDATA\Packages\Claude_*\LocalCache\Roaming\Claude\claude_desktop_config.json" -EA SilentlyContinue | ForEach-Object FullName)
-if ((Test-Path "$env:APPDATA\Claude") -or ($DeskCfgs.Count -gt 1)) {
+$DeskDirs = @(Get-Item "$env:APPDATA\Claude" -EA SilentlyContinue) + @(Get-ChildItem "$env:LOCALAPPDATA\Packages" -Directory -Filter 'Claude*' -EA SilentlyContinue | ForEach-Object { Join-Path $_.FullName 'LocalCache\Roaming\Claude' } | Where-Object { Test-Path $_ } | Get-Item)
+$DeskCfgs = @($DeskDirs | Where-Object { $_ } | ForEach-Object { Join-Path $_.FullName 'claude_desktop_config.json' })
+if ($DeskCfgs.Count) {
   Paso "Claude Desktop: MCP Power BI (Microsoft)" {
     foreach ($cfg in $DeskCfgs) {
       if (-not (Test-Path (Split-Path $cfg))) { continue }
