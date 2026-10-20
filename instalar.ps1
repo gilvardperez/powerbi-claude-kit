@@ -90,6 +90,21 @@ if ($claude) {
   }
 } else { Aviso "Claude Code no encontrado (se omite). Si lo tienes, reabre la terminal y repite." }
 
+# Quitar el MCP antiguo de DAX Insider de la app de escritorio de Claude (lo agrega el boton de DAX Insider)
+Paso "Claude Desktop: quitar MCP dax-insider antiguo" {
+  foreach ($cfg in @("$env:APPDATA\Claude\claude_desktop_config.json", "$env:LOCALAPPDATA\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json")) {
+    if (Test-Path $cfg) {
+      $raw = (Get-Content $cfg -Raw).TrimStart([char]0xFEFF)
+      if ($raw -match 'dax-insider') {
+        Respaldar $cfg
+        $j = $raw | ConvertFrom-Json
+        $j.mcpServers.PSObject.Properties.Remove('dax-insider')
+        Escribir $cfg ($j | ConvertTo-Json -Depth 20)
+      }
+    }
+  }
+}
+
 # 6. Codex
 $CodexDir = Join-Path $H '.codex'
 if ((Get-Command codex -EA SilentlyContinue) -or (Test-Path $CodexDir)) {
@@ -126,7 +141,7 @@ Write-Host ""
 if ($fail.Count) { Write-Host "RESULTADO: CON PROBLEMAS -> $($fail -join ', ')" -F Red; Write-Host "Respaldos en $Resp" }
 else {
   Write-Host "RESULTADO: OK" -F Green
-  Write-Host "1) Reinicia tu agente (Claude Code / Codex / Antigravity)."
+  Write-Host "1) Cierra por completo y vuelve a abrir tu agente (Claude app / Claude Code / Codex / Antigravity) y abre una conversacion NUEVA."
   Write-Host "2) Power BI Desktop: Opciones > Vista previa > Power BI Project (.pbip)."
   Write-Host "3) Abre tu .pbip, guarda y di: 'Crea un dashboard del reporte que tengo abierto'."
 }
