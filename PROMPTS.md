@@ -5,6 +5,8 @@ Antes de empezar:
 - Para cambios en el informe (páginas y visuales), el archivo debe ser **.pbip**. Para el modelo (medidas, tablas, relaciones) sirve también .pbix.
 - Abre una **conversación nueva** para cada trabajo grande.
 
+**Si usas el chat de la app de escritorio de Claude:** las skills hay que subirlas una vez. El instalador deja los .zip en tu Escritorio, en la carpeta *Skills Power BI para Claude*. Ve a **Configuración → Skills → Subir skill** y sube cada .zip. (En Claude Code, Codex y Antigravity ya quedan instaladas solas.)
+
 Truco: menciona la skill por su nombre al inicio del prompt ("Usa la skill …"). Así Claude la carga y sigue su procedimiento.
 
 ---
