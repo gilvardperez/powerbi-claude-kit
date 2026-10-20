@@ -12,7 +12,7 @@ $Base   = Join-Path $H '.pbi-kit'
 $Resp   = Join-Path $Base ('respaldos\' + (Get-Date -f 'yyyyMMdd-HHmmss'))
 $MsZip  = 'https://github.com/microsoft/skills-for-fabric/archive/refs/heads/main.zip'
 $KitZip = 'https://github.com/gilvardperez/powerbi-claude-kit/archive/refs/heads/main.zip'
-$DaxUrl = 'https://github.com/gilvardperez/powerbi-claude-kit/releases/latest/download/DAX-Insider.exe'
+$DaxApi = 'https://api.github.com/repos/gilvardperez/DaxInsider/releases/latest'
 $DaxDir = Join-Path $env:LOCALAPPDATA 'DAX Insider'
 $DaxExe = Join-Path $DaxDir 'DAX Insider.exe'
 New-Item -ItemType Directory -Force $Base, $Resp | Out-Null
@@ -67,10 +67,23 @@ function Copiar-Skills($destino) {
 }
 
 # 4. DAX Insider
-Paso "DAX Insider" {
-  if (-not (Test-Path $DaxExe)) {
+Paso "DAX Insider (ultima version de github.com/gilvardperez/DaxInsider)" {
+  $rel = Invoke-RestMethod $DaxApi -Headers @{ 'User-Agent' = 'pbi-kit' }
+  $ver = Join-Path $DaxDir 'version.txt'
+  $tengo = if (Test-Path $ver) { (Get-Content $ver -Raw).Trim() } else { '' }
+  if ($tengo -ne $rel.tag_name -or -not (Test-Path $DaxExe)) {
+    $asset = $rel.assets | Where-Object { $_.name -like '*.zip' } | Select-Object -First 1
+    if (-not $asset) { throw "el release $($rel.tag_name) no trae .zip" }
+    Get-Process 'DAX Insider*' -EA SilentlyContinue | Stop-Process -Force
+    $zip = Join-Path $env:TEMP $asset.name
+    Invoke-WebRequest $asset.browser_download_url -OutFile $zip -UseBasicParsing
     New-Item -ItemType Directory -Force $DaxDir | Out-Null
-    Invoke-WebRequest $DaxUrl -OutFile $DaxExe -UseBasicParsing
+    $tmp = Join-Path $env:TEMP 'dax-insider-x'; if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
+    Expand-Archive $zip $tmp -Force
+    $exe = Get-ChildItem $tmp -Recurse -Filter 'DAX Insider.exe' | Select-Object -First 1
+    if (-not $exe) { throw "no encontre 'DAX Insider.exe' en $($asset.name)" }
+    Copy-Item (Join-Path $exe.DirectoryName '*') $DaxDir -Recurse -Force
+    Set-Content $ver $rel.tag_name
   }
 }
 

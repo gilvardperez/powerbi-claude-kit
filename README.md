@@ -22,7 +22,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://gilvardperez
 | Skills `semantic-model-authoring` y `powerbi-report-cli` | [skills-for-fabric / powerbi-authoring](https://github.com/microsoft/skills-for-fabric/tree/main/plugins/powerbi-authoring) |
 | CLIs `powerbi-report-author` y `powerbi-desktop` | npm de Microsoft (@latest) |
 | Skills del kit: dashboard, Deneb, HTML/SVG, DAX Insider | este repo |
-| MCP de DAX Insider | [DAX Insider](https://daxinsider.netlify.app/) |
+| DAX Insider + su MCP (última versión) | [gilvardperez/DaxInsider](https://github.com/gilvardperez/DaxInsider/releases/latest) |
 
 Funciona en **Claude Code, Codex y Antigravity**: el instalador detecta cuáles tienes.
 
