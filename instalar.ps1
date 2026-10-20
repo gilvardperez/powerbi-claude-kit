@@ -19,6 +19,7 @@ New-Item -ItemType Directory -Force $Base, $Resp | Out-Null
 
 Write-Host "`n== Power BI Claude Kit (Gilvard Perez) ==`n" -F Cyan
 
+function Escribir($f, $t) { [IO.File]::WriteAllText($f, $t, (New-Object Text.UTF8Encoding $false)) }
 function Respaldar($f) { if (Test-Path $f) { Copy-Item $f (Join-Path $Resp ((Split-Path $f -Leaf) + '.bak')) -Force } }
 
 # 1. Node.js
@@ -90,8 +91,14 @@ Paso "DAX Insider (ultima version de github.com/gilvardperez/DaxInsider)" {
 $MsMcp  = @{ command = 'npx'; args = @('-y','@microsoft/powerbi-modeling-mcp@latest','--start') }
 $DaxMcp = @{ command = $DaxExe; args = @('--mcp') }
 
-# 5. Claude Code
-if (Get-Command claude -EA SilentlyContinue) {
+# 5. Claude Code (busca claude aunque no este en el PATH)
+$claude = (Get-Command claude -EA SilentlyContinue).Source
+if (-not $claude) {
+  $claude = @("$H\.local\bin\claude.exe", "$env:APPDATA\npm\claude.cmd", "$env:LOCALAPPDATA\Programs\claude\claude.exe") |
+    Where-Object { Test-Path $_ } | Select-Object -First 1
+}
+if ($claude) { Set-Alias claude $claude -Scope Script }
+if ($claude) {
   Paso "Claude Code: skills + MCP Power BI (Microsoft)" {
     claude plugin marketplace add https://github.com/microsoft/skills-for-fabric.git 2>&1 | Out-Null
     claude plugin marketplace update fabric-collection 2>&1 | Out-Null
@@ -105,7 +112,7 @@ if (Get-Command claude -EA SilentlyContinue) {
   Paso "Claude Code: MCP DAX Insider" {
     if (-not ((claude mcp list 2>&1) -match 'dax-insider')) { claude mcp add -s user dax-insider -- "$DaxExe" --mcp 2>&1 | Out-Null }
   }
-} else { Aviso "Claude Code no encontrado (se omite)" }
+} else { Aviso "Claude Code no encontrado (se omite). Si lo tienes, reabre la terminal y repite." }
 
 # 6. Codex
 $CodexDir = Join-Path $H '.codex'
@@ -122,7 +129,7 @@ if ((Get-Command codex -EA SilentlyContinue) -or (Test-Path $CodexDir)) {
     if ($t -notmatch '\[mcp_servers\.dax-insider\]') {
       $t += "`n[mcp_servers.dax-insider]`ncommand = `"$daxToml`"`nargs = [`"--mcp`"]`n"
     }
-    Set-Content $cfg $t -Encoding UTF8
+    Escribir $cfg $t
   }
 } else { Aviso "Codex no encontrado (se omite)" }
 
@@ -133,11 +140,12 @@ if (Test-Path (Join-Path $H '.gemini')) {
     Copiar-Skills (Join-Path $AgDir 'skills')
     $cfg = Join-Path $AgDir 'mcp_config.json'
     Respaldar $cfg
-    $j = if (Test-Path $cfg) { Get-Content $cfg -Raw | ConvertFrom-Json } else { [pscustomobject]@{} }
+    $raw = if (Test-Path $cfg) { (Get-Content $cfg -Raw) } else { '' }
+    $j = if ($raw -and $raw.Trim()) { $raw.TrimStart([char]0xFEFF) | ConvertFrom-Json } else { [pscustomobject]@{} }
     if (-not $j.mcpServers) { $j | Add-Member mcpServers ([pscustomobject]@{}) -Force }
-    if (-not $j.mcpServers.'powerbi-modeling-mcp') { $j.mcpServers | Add-Member 'powerbi-modeling-mcp' $MsMcp }
-    if (-not $j.mcpServers.'dax-insider')          { $j.mcpServers | Add-Member 'dax-insider' $DaxMcp }
-    $j | ConvertTo-Json -Depth 10 | Set-Content $cfg -Encoding UTF8
+    if (-not $j.mcpServers.'powerbi-modeling-mcp') { $j.mcpServers | Add-Member 'powerbi-modeling-mcp' ([pscustomobject]$MsMcp) }
+    if (-not $j.mcpServers.'dax-insider')          { $j.mcpServers | Add-Member 'dax-insider' ([pscustomobject]$DaxMcp) }
+    Escribir $cfg ($j | ConvertTo-Json -Depth 10)
   }
 } else { Aviso "Antigravity no encontrado (se omite)" }
 
