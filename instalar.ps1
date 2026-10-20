@@ -1,5 +1,5 @@
-# Power BI Claude Kit - instalador de un comando
-#   irm https://raw.githubusercontent.com/gilvardperez/powerbi-claude-kit/main/instalar.ps1 | iex
+# Power BI MCP Kit - instalador de un comando
+#   irm https://raw.githubusercontent.com/gilvardperez/powerbi-mcp-kit/main/instalar.ps1 | iex
 # Seguro de repetir: cada vez trae la ultima version de las skills de Microsoft y del kit.
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
@@ -11,10 +11,10 @@ $H      = $env:USERPROFILE
 $Base   = Join-Path $H '.pbi-kit'
 $Resp   = Join-Path $Base ('respaldos\' + (Get-Date -f 'yyyyMMdd-HHmmss'))
 $MsZip  = 'https://github.com/microsoft/skills-for-fabric/archive/refs/heads/main.zip'
-$KitZip = 'https://github.com/gilvardperez/powerbi-claude-kit/archive/refs/heads/main.zip'
+$KitZip = 'https://github.com/gilvardperez/powerbi-mcp-kit/archive/refs/heads/main.zip'
 New-Item -ItemType Directory -Force $Base, $Resp | Out-Null
 
-Write-Host "`n== Power BI Claude Kit (Gilvard Perez) ==`n" -F Cyan
+Write-Host "`n== Power BI MCP Kit (Gilvard Perez) ==`n" -F Cyan
 
 function Escribir($f, $t) { [IO.File]::WriteAllText($f, $t, (New-Object Text.UTF8Encoding $false)) }
 function Respaldar($f) { if (Test-Path $f) { Copy-Item $f (Join-Path $Resp ((Split-Path $f -Leaf) + '.bak')) -Force } }
@@ -81,7 +81,7 @@ if ($claude) {
     claude plugin install powerbi-authoring@fabric-collection 2>&1 | Out-Null
   }
   Paso "Claude Code: kit de Gilvard" {
-    claude plugin marketplace add https://github.com/gilvardperez/powerbi-claude-kit.git 2>&1 | Out-Null
+    claude plugin marketplace add https://github.com/gilvardperez/powerbi-mcp-kit.git 2>&1 | Out-Null
     claude plugin marketplace update gilvard-pbi 2>&1 | Out-Null
     claude plugin install pbi-kit@gilvard-pbi 2>&1 | Out-Null
   }

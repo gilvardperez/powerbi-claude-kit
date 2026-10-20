@@ -1,4 +1,4 @@
-# Power BI Claude Kit
+# Power BI MCP Kit
 
 Dashboards de Power BI con Claude. Reutiliza las **skills oficiales de Microsoft** (siempre en su última versión) y agrega Deneb, visuales HTML/SVG y el motor de calidad de **DAX Insider** integrado.
 
@@ -6,12 +6,12 @@ Dashboards de Power BI con Claude. Reutiliza las **skills oficiales de Microsoft
 
 Pásale a tu agente (Claude Code, Codex o Antigravity) el link de este repo y dile **"instalar"**:
 
-> https://github.com/gilvardperez/powerbi-claude-kit — instalar
+> https://github.com/gilvardperez/powerbi-mcp-kit — instalar
 
 El agente sigue [INSTALAR.md](INSTALAR.md). O hazlo tú en PowerShell:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/gilvardperez/powerbi-claude-kit/main/instalar.ps1 | iex"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/gilvardperez/powerbi-mcp-kit/main/instalar.ps1 | iex"
 ```
 
 ## Qué instala
