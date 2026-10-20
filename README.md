@@ -14,10 +14,22 @@ O en PowerShell:
 powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://gilvardperez.github.io/powerbi-claude-kit/instalar.ps1 | iex"
 ```
 
+## Qué instala
+
+| Pieza | Origen |
+|---|---|
+| MCP de modelado Power BI | [Microsoft](https://github.com/microsoft/skills-for-fabric) · `@microsoft/powerbi-modeling-mcp@latest` |
+| Skills `semantic-model-authoring` y `powerbi-report-cli` | [skills-for-fabric / powerbi-authoring](https://github.com/microsoft/skills-for-fabric/tree/main/plugins/powerbi-authoring) |
+| CLIs `powerbi-report-author` y `powerbi-desktop` | npm de Microsoft (@latest) |
+| Skills del kit: dashboard, Deneb, HTML/SVG, DAX Insider | este repo |
+| MCP de DAX Insider | [DAX Insider](https://daxinsider.netlify.app/) |
+
+Funciona en **Claude Code, Codex y Antigravity**: el instalador detecta cuáles tienes.
+
 ## Actualizaciones
 
 - El MCP oficial corre con `@microsoft/powerbi-modeling-mcp@latest`: siempre la última versión.
-- Para traer las skills nuevas de Microsoft y del kit, vuelve a correr el instalador.
+- Cada vez que corres el instalador baja la última versión de las skills de Microsoft (rama `main`) y del kit. Es seguro repetirlo; respalda tus configs en `%USERPROFILE%\.pbi-kit\respaldos`.
 
 ## Usar
 

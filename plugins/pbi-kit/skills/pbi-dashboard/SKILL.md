@@ -14,4 +14,5 @@ Usa las skills oficiales de Microsoft (`semantic-model-authoring`, `powerbi-repo
 5. **Validar y recargar**: `powerbi-report-author validate`, `powerbi-desktop reload --pid <PID>`, `screenshot-all`. Revisar capturas y corregir.
 6. **Re-auditar con DAX Insider** y mostrar antes/después + hallazgos de negocio.
 
-Lo que pida el usuario (color, páginas, layout) manda sobre cualquier default.
+## Estilo
+Por defecto usa los visuales nativos y el tema por defecto de Power BI (sin importar visuales). Deneb, HTML/SVG o un color de marca solo si el usuario lo pide. Lo que pida el usuario (color, páginas, layout) manda sobre cualquier default.

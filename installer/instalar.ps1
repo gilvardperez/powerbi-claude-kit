@@ -1,39 +1,138 @@
-# Instalador de un comando: irm https://gilvardperez.github.io/powerbi-claude-kit/instalar.ps1 | iex
+# Power BI Claude Kit - instalador de un comando
+#   irm https://gilvardperez.github.io/powerbi-claude-kit/instalar.ps1 | iex
+# Seguro de repetir: cada vez trae la ultima version de las skills de Microsoft y del kit.
 $ErrorActionPreference = 'Continue'
-$ok = @(); $fail = @()
-function Paso($n, [scriptblock]$b) { try { & $b; Write-Host "OK  $n" -F Green; $script:ok += $n } catch { Write-Host "X   $n -> $_" -F Red; $script:fail += $n } }
+$ProgressPreference = 'SilentlyContinue'
+$fail = @()
+function Paso($n, [scriptblock]$b) { try { & $b; Write-Host "OK  $n" -F Green } catch { Write-Host "X   $n -> $_" -F Red; $script:fail += $n } }
+function Aviso($t) { Write-Host "!   $t" -F Yellow }
 
-Write-Host "`n== Power BI Claude Kit (Gilvard) ==`n" -F Cyan
+$H      = $env:USERPROFILE
+$Base   = Join-Path $H '.pbi-kit'
+$Resp   = Join-Path $Base ('respaldos\' + (Get-Date -f 'yyyyMMdd-HHmmss'))
+$MsZip  = 'https://github.com/microsoft/skills-for-fabric/archive/refs/heads/main.zip'
+$KitZip = 'https://github.com/gilvardperez/powerbi-claude-kit/archive/refs/heads/main.zip'
+$DaxUrl = 'https://github.com/gilvardperez/powerbi-claude-kit/releases/latest/download/DAX-Insider.exe'
+$DaxDir = Join-Path $env:LOCALAPPDATA 'DAX Insider'
+$DaxExe = Join-Path $DaxDir 'DAX Insider.exe'
+New-Item -ItemType Directory -Force $Base, $Resp | Out-Null
 
+Write-Host "`n== Power BI Claude Kit (Gilvard Perez) ==`n" -F Cyan
+
+function Respaldar($f) { if (Test-Path $f) { Copy-Item $f (Join-Path $Resp ((Split-Path $f -Leaf) + '.bak')) -Force } }
+
+# 1. Node.js
 Paso "Node.js" {
   if (-not (Get-Command node -EA SilentlyContinue)) {
     winget install -e --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements | Out-Null
     $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
   }
-  node --version | Out-Null
+  if (-not (Get-Command node -EA SilentlyContinue)) { throw "instala Node LTS desde nodejs.org" }
 }
 
-Paso "CLIs de Power BI (Microsoft)" {
+# 2. CLIs oficiales de Microsoft (siempre @latest)
+Paso "CLIs de Power BI (Microsoft, ultima version)" {
   npm i -g @microsoft/powerbi-report-authoring-cli@latest @microsoft/powerbi-desktop-bridge-cli@latest 2>&1 | Out-Null
   if ($LASTEXITCODE) { throw "npm fallo" }
 }
 
+# 3. Descargar la ultima version de las skills (Microsoft + kit)
+$Src = Join-Path $Base 'src'
+Paso "Descargar skills oficiales de Microsoft y del kit" {
+  if (Test-Path $Src) { Remove-Item $Src -Recurse -Force }
+  New-Item -ItemType Directory -Force $Src | Out-Null
+  foreach ($z in @(@($MsZip,'ms'), @($KitZip,'kit'))) {
+    $f = Join-Path $Src ($z[1] + '.zip')
+    Invoke-WebRequest $z[0] -OutFile $f -UseBasicParsing
+    Expand-Archive $f (Join-Path $Src $z[1]) -Force
+  }
+}
+$MsRoot  = Get-ChildItem (Join-Path $Src 'ms')  -Directory | Select-Object -First 1
+$KitRoot = Get-ChildItem (Join-Path $Src 'kit') -Directory | Select-Object -First 1
+# Skills: las oficiales de Power BI de Microsoft + las del kit
+$Skills = @()
+if ($MsRoot)  { $Skills += Get-ChildItem (Join-Path $MsRoot.FullName 'plugins\powerbi-authoring\skills') -Directory -EA SilentlyContinue }
+if ($KitRoot) { $Skills += Get-ChildItem (Join-Path $KitRoot.FullName 'plugins\pbi-kit\skills') -Directory -EA SilentlyContinue }
+$MsCommon = if ($MsRoot) { Join-Path $MsRoot.FullName 'plugins\powerbi-authoring\common' }
+
+function Copiar-Skills($destino) {
+  New-Item -ItemType Directory -Force $destino | Out-Null
+  foreach ($s in $Skills) {
+    $d = Join-Path $destino $s.Name
+    if (Test-Path $d) { Remove-Item $d -Recurse -Force }
+    Copy-Item $s.FullName $d -Recurse -Force
+  }
+  # las skills de Microsoft referencian ../../common
+  if ($MsCommon -and (Test-Path $MsCommon)) { Copy-Item $MsCommon (Join-Path (Split-Path $destino) 'common') -Recurse -Force }
+}
+
+# 4. DAX Insider
+Paso "DAX Insider" {
+  if (-not (Test-Path $DaxExe)) {
+    New-Item -ItemType Directory -Force $DaxDir | Out-Null
+    Invoke-WebRequest $DaxUrl -OutFile $DaxExe -UseBasicParsing
+  }
+}
+
+$MsMcp  = @{ command = 'npx'; args = @('-y','@microsoft/powerbi-modeling-mcp@latest','--start') }
+$DaxMcp = @{ command = $DaxExe; args = @('--mcp') }
+
+# 5. Claude Code
 if (Get-Command claude -EA SilentlyContinue) {
-  Paso "Skills oficiales de Microsoft + MCP Power BI" {
+  Paso "Claude Code: skills + MCP Power BI (Microsoft)" {
     claude plugin marketplace add https://github.com/microsoft/skills-for-fabric.git 2>&1 | Out-Null
     claude plugin marketplace update fabric-collection 2>&1 | Out-Null
     claude plugin install powerbi-authoring@fabric-collection 2>&1 | Out-Null
   }
-  Paso "Kit de Gilvard (Deneb, HTML/SVG, DAX Insider)" {
+  Paso "Claude Code: kit de Gilvard" {
     claude plugin marketplace add https://github.com/gilvardperez/powerbi-claude-kit.git 2>&1 | Out-Null
     claude plugin marketplace update gilvard-pbi 2>&1 | Out-Null
     claude plugin install pbi-kit@gilvard-pbi 2>&1 | Out-Null
   }
-} else {
-  Write-Host "!   Claude Code no encontrado. Instalalo y vuelve a correr este comando." -F Yellow
-  $fail += "Claude Code"
-}
+  Paso "Claude Code: MCP DAX Insider" {
+    if (-not ((claude mcp list 2>&1) -match 'dax-insider')) { claude mcp add -s user dax-insider -- "$DaxExe" --mcp 2>&1 | Out-Null }
+  }
+} else { Aviso "Claude Code no encontrado (se omite)" }
+
+# 6. Codex
+$CodexDir = Join-Path $H '.codex'
+if ((Get-Command codex -EA SilentlyContinue) -or (Test-Path $CodexDir)) {
+  Paso "Codex: skills + MCP" {
+    Copiar-Skills (Join-Path $CodexDir 'skills')
+    $cfg = Join-Path $CodexDir 'config.toml'
+    Respaldar $cfg
+    $t = if (Test-Path $cfg) { Get-Content $cfg -Raw } else { '' }
+    $daxToml = $DaxExe -replace '\\','\\'
+    if ($t -notmatch '\[mcp_servers\.powerbi-modeling-mcp\]') {
+      $t += "`n[mcp_servers.powerbi-modeling-mcp]`ncommand = `"npx`"`nargs = [`"-y`", `"@microsoft/powerbi-modeling-mcp@latest`", `"--start`"]`n"
+    }
+    if ($t -notmatch '\[mcp_servers\.dax-insider\]') {
+      $t += "`n[mcp_servers.dax-insider]`ncommand = `"$daxToml`"`nargs = [`"--mcp`"]`n"
+    }
+    Set-Content $cfg $t -Encoding UTF8
+  }
+} else { Aviso "Codex no encontrado (se omite)" }
+
+# 7. Antigravity
+$AgDir = Join-Path $H '.gemini\config'
+if (Test-Path (Join-Path $H '.gemini')) {
+  Paso "Antigravity: skills + MCP" {
+    Copiar-Skills (Join-Path $AgDir 'skills')
+    $cfg = Join-Path $AgDir 'mcp_config.json'
+    Respaldar $cfg
+    $j = if (Test-Path $cfg) { Get-Content $cfg -Raw | ConvertFrom-Json } else { [pscustomobject]@{} }
+    if (-not $j.mcpServers) { $j | Add-Member mcpServers ([pscustomobject]@{}) -Force }
+    if (-not $j.mcpServers.'powerbi-modeling-mcp') { $j.mcpServers | Add-Member 'powerbi-modeling-mcp' $MsMcp }
+    if (-not $j.mcpServers.'dax-insider')          { $j.mcpServers | Add-Member 'dax-insider' $DaxMcp }
+    $j | ConvertTo-Json -Depth 10 | Set-Content $cfg -Encoding UTF8
+  }
+} else { Aviso "Antigravity no encontrado (se omite)" }
 
 Write-Host ""
-if ($fail.Count) { Write-Host "RESULTADO: CON PROBLEMAS -> $($fail -join ', ')" -F Red }
-else { Write-Host "RESULTADO: OK. Reinicia Claude, abre tu .pbip y di: 'Crea un dashboard del reporte que tengo abierto'" -F Green }
+if ($fail.Count) { Write-Host "RESULTADO: CON PROBLEMAS -> $($fail -join ', ')" -F Red; Write-Host "Respaldos en $Resp" }
+else {
+  Write-Host "RESULTADO: OK" -F Green
+  Write-Host "1) Reinicia tu agente (Claude Code / Codex / Antigravity)."
+  Write-Host "2) Power BI Desktop: Opciones > Vista previa > Power BI Project (.pbip)."
+  Write-Host "3) Abre tu .pbip, guarda y di: 'Crea un dashboard del reporte que tengo abierto'."
+}
