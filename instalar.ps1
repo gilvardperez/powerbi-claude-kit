@@ -86,6 +86,14 @@ if ($claude) {
     claude plugin marketplace update gilvard-pbi 2>&1 | Out-Null
     claude plugin install pbi-kit@gilvard-pbi 2>&1 | Out-Null
   }
+  Paso "Claude Code: skills en %USERPROFILE%\.claude\skills (respaldo del plugin)" {
+    Copiar-Skills (Join-Path $H '.claude\skills')
+  }
+  Paso "Claude Code: MCP Power BI a nivel usuario" {
+    if (-not ((claude mcp list 2>&1) -match 'powerbi-modeling-mcp')) {
+      claude mcp add -s user powerbi-modeling-mcp -- npx -y @microsoft/powerbi-modeling-mcp@latest --start 2>&1 | Out-Null
+    }
+  }
   Paso "Claude Code: quitar MCP dax-insider antiguo" {
     if ((claude mcp list 2>&1) -match 'dax-insider') { claude mcp remove dax-insider -s user 2>&1 | Out-Null }
   }
