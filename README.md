@@ -26,6 +26,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubus
 
 Funciona en **Claude Code, Codex y Antigravity**: el instalador detecta cuáles tienes.
 
+## Qué le pido
+
+Mira la [guía de prompts](PROMPTS.md): qué hace cada skill y prompts listos para copiar.
+
 ## Actualizaciones
 
 - El MCP oficial corre con `@microsoft/powerbi-modeling-mcp@latest`: siempre la última versión.
