@@ -129,7 +129,7 @@ $ZipDir = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Skills Power BI p
 Paso "Skills en .zip para la app de escritorio de Claude" {
   if (Test-Path $ZipDir) { Remove-Item $ZipDir -Recurse -Force }
   New-Item -ItemType Directory -Force $ZipDir | Out-Null
-  $tmpS = Join-Path $env:TEMP 'pbi-kit-zips'; if (Test-Path $tmpS) { Remove-Item $tmpS -Recurse -Force }
+  $tmpS = Join-Path $env:TEMP 'pbi-kit-zips'; if (Test-Path $tmpS) { Remove-Item $tmpS -Recurse -Force }; New-Item -ItemType Directory -Force $tmpS | Out-Null
   foreach ($sk in $Skills) {
     $d = Join-Path $tmpS $sk.Name
     Copy-Item $sk.FullName $d -Recurse -Force
