@@ -1,0 +1,7 @@
+{
+  "name": "pbi-kit",
+  "description": "Dashboards Power BI con Claude: orquestador, Deneb, HTML/SVG y DAX Insider",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": "https://github.com/gilvardperez/powerbi-claude-kit"
+}

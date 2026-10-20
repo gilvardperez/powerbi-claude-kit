@@ -1,0 +1,13 @@
+{
+  "name": "gilvard-pbi",
+  "owner": { "name": "Gilvard Perez" },
+  "metadata": { "description": "Kit de Power BI con Claude: skills oficiales de Microsoft + Deneb, HTML/SVG y DAX Insider", "version": "0.1.0" },
+  "plugins": [
+    {
+      "name": "pbi-kit",
+      "source": "./plugins/pbi-kit",
+      "description": "Dashboards Power BI con Claude: orquestador, Deneb, HTML/SVG y DAX Insider",
+      "version": "0.1.0"
+    }
+  ]
+}
