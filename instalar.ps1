@@ -93,6 +93,8 @@ if ($claude) {
 
 # App de escritorio de Claude (chat): agrega el MCP de Microsoft y quita el dax-insider antiguo
 $DeskDirs = @("$env:APPDATA\Claude")
+# Version de Microsoft Store con datos fuera del paquete: %LOCALAPPDATA%\Claude-Data\claude_<id>
+$DeskDirs += Get-ChildItem "$env:LOCALAPPDATA\Claude-Data" -Directory -EA SilentlyContinue | ForEach-Object FullName
 $DeskDirs += Get-ChildItem "$env:LOCALAPPDATA\Packages" -Directory -EA SilentlyContinue | Where-Object { $_.Name -like 'Claude*' -or $_.Name -like 'Anthropic*' } | ForEach-Object { Join-Path $_.FullName 'LocalCache\Roaming\Claude' }
 Paso "Claude Desktop: MCP Power BI (Microsoft)" {
   foreach ($dir in $DeskDirs) {
