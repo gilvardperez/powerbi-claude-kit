@@ -92,22 +92,23 @@ if ($claude) {
 } else { Aviso "Claude Code no encontrado (se omite). Si lo tienes, reabre la terminal y repite." }
 
 # App de escritorio de Claude (chat): agrega el MCP de Microsoft y quita el dax-insider antiguo
-$DeskDirs = @(Get-Item "$env:APPDATA\Claude" -EA SilentlyContinue) + @(Get-ChildItem "$env:LOCALAPPDATA\Packages" -Directory -Filter 'Claude*' -EA SilentlyContinue | ForEach-Object { Join-Path $_.FullName 'LocalCache\Roaming\Claude' } | Where-Object { Test-Path $_ } | Get-Item)
-$DeskCfgs = @($DeskDirs | Where-Object { $_ } | ForEach-Object { Join-Path $_.FullName 'claude_desktop_config.json' })
-if ($DeskCfgs.Count) {
-  Paso "Claude Desktop: MCP Power BI (Microsoft)" {
-    foreach ($cfg in $DeskCfgs) {
-      if (-not (Test-Path (Split-Path $cfg))) { continue }
-      Respaldar $cfg
-      $raw = if (Test-Path $cfg) { (Get-Content $cfg -Raw).TrimStart([char]0xFEFF) } else { '' }
-      $j = if ($raw.Trim()) { $raw | ConvertFrom-Json } else { [pscustomobject]@{} }
-      if (-not $j.mcpServers) { $j | Add-Member mcpServers ([pscustomobject]@{}) -Force }
-      if ($j.mcpServers.'dax-insider') { $j.mcpServers.PSObject.Properties.Remove('dax-insider') }
-      if (-not $j.mcpServers.'powerbi-modeling-mcp') { $j.mcpServers | Add-Member 'powerbi-modeling-mcp' ([pscustomobject]$MsMcp) }
-      Escribir $cfg ($j | ConvertTo-Json -Depth 20)
-    }
+$DeskDirs = @("$env:APPDATA\Claude")
+$DeskDirs += Get-ChildItem "$env:LOCALAPPDATA\Packages" -Directory -EA SilentlyContinue | Where-Object { $_.Name -like 'Claude*' -or $_.Name -like 'Anthropic*' } | ForEach-Object { Join-Path $_.FullName 'LocalCache\Roaming\Claude' }
+Paso "Claude Desktop: MCP Power BI (Microsoft)" {
+  foreach ($dir in $DeskDirs) {
+    New-Item -ItemType Directory -Force $dir | Out-Null
+    $cfg = Join-Path $dir 'claude_desktop_config.json'
+    Respaldar $cfg
+    $raw = if (Test-Path $cfg) { (Get-Content $cfg -Raw).TrimStart([char]0xFEFF) } else { '' }
+    $j = if ($raw -and $raw.Trim()) { $raw | ConvertFrom-Json } else { [pscustomobject]@{} }
+    if (-not $j.mcpServers) { $j | Add-Member mcpServers ([pscustomobject]@{}) -Force }
+    if ($j.mcpServers.'dax-insider') { $j.mcpServers.PSObject.Properties.Remove('dax-insider') }
+    if (-not $j.mcpServers.'powerbi-modeling-mcp') { $j.mcpServers | Add-Member 'powerbi-modeling-mcp' ([pscustomobject]$MsMcp) }
+    Escribir $cfg ($j | ConvertTo-Json -Depth 20)
+    if (-not (Select-String -Path $cfg -Pattern 'powerbi-modeling-mcp' -Quiet)) { throw "no se pudo escribir $cfg" }
+    Write-Host "    -> $cfg" -F DarkGray
   }
-} else { Aviso "App de escritorio de Claude no encontrada (se omite)" }
+}
 
 # 6. Codex
 $CodexDir = Join-Path $H '.codex'
