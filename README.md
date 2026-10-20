@@ -4,15 +4,19 @@ Dashboards de Power BI con Claude. Reutiliza las **skills oficiales de Microsoft
 
 ## Instalar
 
-Pásale a tu agente (Claude Code, Codex o Antigravity) el link de este repo y dile **"instalar"**:
+Abre Claude, entra a la pestaña **`</>` Code** (o Claude Code / Codex / Antigravity) y escribe:
 
 > https://github.com/gilvardperez/powerbi-mcp-kit — instalar
 
-El agente sigue [INSTALAR.md](INSTALAR.md). O hazlo tú en PowerShell:
+Eso es todo. El agente sigue [INSTALAR.md](INSTALAR.md), ejecuta el instalador y te dice qué hacer después.
+
+¿Prefieres hacerlo tú? Pega esto en PowerShell:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/gilvardperez/powerbi-mcp-kit/main/instalar.ps1 | iex"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm 'https://raw.githubusercontent.com/gilvardperez/powerbi-mcp-kit/main/instalar.ps1' | iex"
 ```
+
+**Dónde se usa:** en la pestaña **`</>` Code** de la app de Claude, Claude Code, Codex o Antigravity (ahí están las skills). El chat normal de Claude recibe solo la conexión a Power BI.
 
 ## Qué instala
 
